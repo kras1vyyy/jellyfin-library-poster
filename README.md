@@ -1,6 +1,6 @@
 # jellyfin_library_poster
 
-根据媒体库里面的海报(默认最新的 9 张,没有时间就随机)生成媒体库封面并且上传更新
+jellyfin/Emby 根据媒体库里面的海报(默认最新的 9 张,没有时间就随机)生成媒体库封面并且上传更新
 不会 python 随便写的
 
 理论上支持 Emby(已得到别人验证可以)
@@ -56,16 +56,18 @@ python main.py
 
 `config.json` 是项目的配置文件，用于设置 Jellyfin 服务器连接信息和媒体库海报生成的规则。
 
-### 1. Jellyfin 服务器配置
+### 1. Jellyfin/Emby 服务器配置
 
 ```json
 "jellyfin": {
-  "base_url": "http://your-jellyfin-server:port",  // Jellyfin 服务器地址
+  "base_url": "http://your-jellyfin/emby-server:port",  // Jellyfin/Emby 服务器地址
   "user_name": "your-username",                    // 登录用户名
   "password": "your-password",                     // 登录密码
   "update_poster": false                            // 是否自动更新海报
 }
 ```
+
+- "jellyfin"的节点不要改,就算你是`emby`的也是`jellyfin`
 
 ### 2. 排除更新的媒体库
 
@@ -88,7 +90,7 @@ python main.py
 ]
 ```
 
-系统会根据这些映射为每个媒体库创建包含相应名称的自定义海报。目前支持的媒体库类型包括：动漫、电视剧、电影、纪录片、合集、正在热映、正在热播和短剧。
+系统会根据这些映射为每个媒体库创建包含相应名称的自定义海报。
 
 ### 4. 定时任务
 
@@ -108,10 +110,72 @@ python main.py
 
 更多 Cron 表达式的用法可以参考相关文档。
 
+### 完成配置
+
+```json
+{
+  "jellyfin": {
+    "base_url": "http://192.168.2.211:8096",
+    "user_name": "username",
+    "password": "password",
+    "update_poster": false
+  },
+  "cron": "0 1 * * *",
+  "exclude_update_library": ["Short", "Playlists", "合集"],
+  "template_mapping": [
+    {
+      "library_name": "Anime",
+      "library_ch_name": "动漫",
+      "library_eng_name": "ANIME"
+    },
+    {
+      "library_name": "Classic TV",
+      "library_ch_name": "电视剧",
+      "library_eng_name": "TV"
+    },
+    {
+      "library_name": "Movie",
+      "library_ch_name": "电影",
+      "library_eng_name": "MOVIE"
+    },
+    {
+      "library_name": "Documentary",
+      "library_ch_name": "纪录片",
+      "library_eng_name": "DOC"
+    },
+    {
+      "library_name": "合集",
+      "library_ch_name": "合集",
+      "library_eng_name": "COLLECTIONS"
+    },
+    {
+      "library_name": "Hot Movie",
+      "library_ch_name": "正在热映",
+      "library_eng_name": "HOT MOVIE"
+    },
+    {
+      "library_name": "Hot TV",
+      "library_ch_name": "正在热播",
+      "library_eng_name": "HOT TV"
+    },
+    {
+      "library_name": "Short",
+      "library_ch_name": "短剧",
+      "library_eng_name": "SHORT"
+    },
+    {
+      "library_name": "TEST TV",
+      "library_ch_name": "测试电视",
+      "library_eng_name": "TEST TV"
+    }
+  ]
+}
+```
+
 ### 注意事项
 
 1. 请确保 `base_url`、`user_name` 和 `password` 配置正确
-2. `exclude_Update_library` 中列出的媒体库将不会被自动更新海报
+2. `exclude_update_library` 中列出的媒体库将不会被自动更新海报
 
 ## 效果图
 
