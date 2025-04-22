@@ -31,8 +31,8 @@ docker run \
 ```yaml
 services:
   jellyfin-library-poster:
-    image: jellyfin-library-poster
-    container_name: evanqu/jellyfin-library-poster:latest
+    image: evanqu/jellyfin-library-poster:latest
+    container_name: jellyfin-library-poster
     volumes:
       - ./config:/app/config
       - ./poster:/app/poster
