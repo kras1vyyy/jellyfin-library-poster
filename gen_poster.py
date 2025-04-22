@@ -580,13 +580,22 @@ def gen_poster_workflow(name):
         # 支持的图片格式
         supported_formats = (".jpg", ".jpeg", ".png", ".bmp", ".gif", ".webp")
 
-        # 获取文件夹中的所有图片
-        poster_files = [
-            os.path.join(poster_folder, f)
-            for f in os.listdir(poster_folder)
-            if os.path.isfile(os.path.join(poster_folder, f))
-            and f.lower().endswith(supported_formats)
-        ]
+        # 自定义排序顺序,如果custom_order=123456789,则代表九宫格图第一列第一行(1,1)为1.jpg，第一列第二行(1,2)为2.jpg，第一列第三行(1,3)为3.jpg,(2,1)=4.jpg以此类推，(3,3)=9.jpg
+        custom_order = "315426987"
+        # 这个顺序是优先把最开始的两张图1.jpg和2.jpg放在最显眼的位置(1,2)和(2,2)，而最后一个9.jpg放在看不见的位置(3,1)
+        order_map = {f"{num}.jpg": index for index, num in enumerate(custom_order)}
+
+        # 获取并排序
+        poster_files = sorted(
+            [
+                os.path.join(poster_folder, f)
+                for f in os.listdir(poster_folder)
+                if os.path.isfile(os.path.join(poster_folder, f))
+                and f.lower().endswith(supported_formats)
+                and os.path.basename(f).lower() in order_map  
+            ],
+            key=lambda x: order_map[os.path.basename(x).lower()]
+        )
 
         # 确保至少有一张图片
         if not poster_files:
