@@ -25,7 +25,7 @@ def ensure_poster_directory(poster_dir, name):
 def get_items(parent_id):
     """获取媒体项列表"""
     # 修改为获取用户的媒体库列表
-    url = f"{config.JELLYFIN_CONFIG['BASE_URL']}/Users/{config.JELLYFIN_CONFIG['USER_ID']}/Items/?ParentId={parent_id}"
+    url = f"{config.JELLYFIN_CONFIG['BASE_URL']}/Users/{config.JELLYFIN_CONFIG['USER_ID']}/Items/?ParentId={parent_id}&&Recursive=true"
 
     headers = {
         "Authorization": f'MediaBrowser Token="{config.JELLYFIN_CONFIG["ACCESS_TOKEN"]}"'

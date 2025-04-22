@@ -6,7 +6,7 @@
     "update_poster": false
   },
   "cron": "0 1 * * *",
-  "exclude_Update_library": ["Short", "Playlists", "合集"],
+  "exclude_update_library": ["Short", "Playlists", "合集"],
   "template_mapping": [
     {
       "library_name": "Anime",
@@ -47,6 +47,11 @@
       "library_name": "Short",
       "library_ch_name": "短剧",
       "library_eng_name": "SHORT"
+    },
+    {
+      "library_name": "TEST TV",
+      "library_ch_name": "测试电视",
+      "library_eng_name": "TEST TV"
     }
   ]
 }

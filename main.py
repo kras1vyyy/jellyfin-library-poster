@@ -49,7 +49,6 @@ def process_libraries():
     # 这里可以根据需要选择特定的媒体库
     for library in libraries:
         logger.info(f"找到媒体库: {library['Name']} (ID: {library['Id']})")
-
         # 2. 下载海报
         success = download_posters_workflow(library["Id"], library["Name"])
         if not success:

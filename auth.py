@@ -16,7 +16,7 @@ def authenticate(base_url, username, password):
     payload = json.dumps({"username": username, "Pw": password})
 
     headers = {
-        "authorization": 'MediaBrowser Client="other", Device="client", DeviceId="123", Version="0.0.0"',
+        "authorization": 'MediaBrowser Client="other", Device="jellyfin-library-poster", DeviceId="123", Version="0.0.0"',
         "Content-Type": "application/json",
     }
 

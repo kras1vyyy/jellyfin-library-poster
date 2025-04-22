@@ -17,6 +17,8 @@ except (FileNotFoundError, json.JSONDecodeError) as e:
             "user_name": "your_username",
             "password": "your_password",
         },
+        "cron": "0 1 * * *",
+        "exclude_update_library": ["Short", "Playlists", "合集"],
         "template_mapping": [{"template_name": "Anime", "library_name": "Anime"}],
     }
 
@@ -42,7 +44,7 @@ JELLYFIN_CONFIG = {
 
 CRON = JSON_CONFIG.get("cron", "0 1 * * *")  # 默认每天1点执行一次
 
-EXCLUDE_LIBRARY = JSON_CONFIG["exclude_Update_library"]  # 排除更新的媒体库列表
+EXCLUDE_LIBRARY = JSON_CONFIG["exclude_update_library"]  # 排除更新的媒体库列表
 
 TEMPLATE_MAPPING = JSON_CONFIG["template_mapping"]
 
