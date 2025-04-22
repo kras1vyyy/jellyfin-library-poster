@@ -13,7 +13,7 @@ except (FileNotFoundError, json.JSONDecodeError) as e:
     print(f"无法加载配置文件 config.json: {e}")
     JSON_CONFIG = {
         "jellyfin": {
-            "base_url": "http://47.122.74.12:12118",
+            "base_url": "http://192.168.2.211:8096",
             "user_name": "your_username",
             "password": "your_password",
         },

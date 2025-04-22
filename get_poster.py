@@ -25,7 +25,7 @@ def ensure_poster_directory(poster_dir, name):
 def get_items(parent_id):
     """获取媒体项列表"""
     # 修改为获取用户的媒体库列表
-    url = f"{config.JELLYFIN_CONFIG['BASE_URL']}/Users/{config.JELLYFIN_CONFIG['USER_ID']}/Items/?ParentId={parent_id}&&Recursive=true"
+    url = f"{config.JELLYFIN_CONFIG['BASE_URL']}/Users/{config.JELLYFIN_CONFIG['USER_ID']}/Items/?ParentId={parent_id}&&Recursive=true&SortBy=DateCreated&SortOrder=Descending&IncludeItemTypes=Movie,Series,Audio,Music,Game,Book,MusicVideo"
 
     headers = {
         "Authorization": f'MediaBrowser Token="{config.JELLYFIN_CONFIG["ACCESS_TOKEN"]}"'
@@ -38,6 +38,7 @@ def get_items(parent_id):
             data = response.json()
             if len(data) > 0:
                 print(f"成功获取到 {len(data)} 个媒体项")
+
                 return data.get("Items", [])
             else:
                 print("未找到任何媒体项")
@@ -55,18 +56,13 @@ def sort_and_select_items(items, count=9):
     if not items:
         return []
 
-    print("正在过滤并对媒体项进行排序...")
+    print("正在过滤媒体项...")
 
     # 先过滤掉没有封面图片的项目
     filtered_items = []
     for item in items:
         if "ImageTags" in item and "Primary" in item.get("ImageTags", {}):
             filtered_items.append(item)
-        # else:
-        #     if "Name" in item:
-        #         print(f"剔除无封面图片的项目: {item['Name']}")
-        #     else:
-        #         print(f"剔除无封面图片的项目: ID {item.get('Id', '未知')}")
 
     print(f"过滤后剩余 {len(filtered_items)}/{len(items)} 个有效媒体项")
 
@@ -74,38 +70,8 @@ def sort_and_select_items(items, count=9):
         print("警告: 过滤后没有包含封面图片的媒体项")
         return []
 
-    # 尝试按 DateLastMediaAdded 或 DateCreated 排序
-    items_with_date = []
-    for item in filtered_items:
-        date_value = None
-        if "DateLastMediaAdded" in item and item["DateLastMediaAdded"]:
-            date_value = item["DateLastMediaAdded"]
-        elif "DateCreated" in item and item["DateCreated"]:
-            date_value = item["DateCreated"]
-
-        if date_value:
-            items_with_date.append((item, date_value))
-
-    if items_with_date:
-        # 按日期降序排序
-        sorted_items = [
-            item
-            for item, _ in sorted(items_with_date, key=lambda x: x[1], reverse=True)
-        ]
-        print(f"已按日期降序排序 {len(sorted_items)} 个媒体项")
-    else:
-        # 如果没有日期字段，随机选择
-        sorted_items = list(filtered_items)  # 转换为列表以确保可变
-        try:
-            random.shuffle(sorted_items)
-            print("未找到日期字段，将随机选择媒体项")
-        except Exception as e:
-            print(f"随机排序媒体项时出错: {e}")
-            # 如果随机排序失败，仍然返回原始列表
-            sorted_items = list(filtered_items)
-
-    # 选择指定数量的项目
-    selected_items = sorted_items[:count]
+    # 直接选择前 count 个项目
+    selected_items = filtered_items[:count]
     print(f"已选择 {len(selected_items)} 个媒体项")
 
     return selected_items
