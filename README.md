@@ -5,9 +5,49 @@
 
 ## 使用说明
 
+### docker 运行
+
+```bash
+docker run \
+  --name jellyfin-library-poster \
+  -v "./config:/app/config" \
+  -v "./poster:/app/poster" \
+  -v "./output:/app/output" \
+  evanqu/jellyfin-library-poster:latest
 ```
+
+`/app/config` 存放 config.json
+
+`/app/poster` 存放下载得海报
+
+`/app/output` 存放生成的媒体库封面
+
+### docker-compose 运行
+
+`docker-compose.yml`文件
+
+```yaml
+services:
+  jellyfin-library-poster:
+    image: jellyfin-library-poster
+    container_name: evanqu/jellyfin-library-poster:latest
+    volumes:
+      - ./config:/app/config
+      - ./poster:/app/poster
+      - ./output:/app/output
+```
+
+```
+docker-compose down && docker-compose pull && docker-compose up -d
+```
+
+### 源码运行
+
+```
+
 pip install -r requirements.txt
 python main.py
+
 ```
 
 ## config 配置说明
@@ -48,6 +88,24 @@ python main.py
 
 系统会根据这些映射为每个媒体库创建包含相应名称的自定义海报。目前支持的媒体库类型包括：动漫、电视剧、电影、纪录片、合集、正在热映、正在热播和短剧。
 
+### 4. 定时任务
+
+```json
+"cron": "0 1 * * *",
+```
+
+`cron` 字段用于设置自动更新海报的定时任务时间。其格式遵循标准的 Cron 表达式规则：
+
+- `0 1 * * *` 表示每天凌晨 1 点执行任务。
+- Cron 表达式的格式为：`分钟 小时 日 月 星期`。
+
+如果需要修改定时任务时间，请根据需求调整 Cron 表达式。例如：
+
+- 每天中午 12 点：`0 12 * * *`
+- 每周一凌晨 2 点：`0 2 * * 1`
+
+更多 Cron 表达式的用法可以参考相关文档。
+
 ### 注意事项
 
 1. 请确保 `base_url`、`user_name` 和 `password` 配置正确
@@ -58,3 +116,7 @@ python main.py
 ![](./screenshot/2.png)
 
 ![](./screenshot/1.png)
+
+```
+
+```

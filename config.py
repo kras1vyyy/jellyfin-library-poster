@@ -5,7 +5,7 @@ import json
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # 加载JSON配置文件
-CONFIG_JSON_PATH = os.path.join(CURRENT_DIR, "config.json")
+CONFIG_JSON_PATH = os.path.join(CURRENT_DIR, "config", "config.json")
 try:
     with open(CONFIG_JSON_PATH, "r", encoding="utf-8") as f:
         JSON_CONFIG = json.load(f)
@@ -39,6 +39,8 @@ JELLYFIN_CONFIG = {
         "update_poster", False
     ),  # 是否更新海报
 }
+
+CRON = JSON_CONFIG.get("cron", "0 1 * * *")  # 默认每天1点执行一次
 
 EXCLUDE_LIBRARY = JSON_CONFIG["exclude_Update_library"]  # 排除更新的媒体库列表
 

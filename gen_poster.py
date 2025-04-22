@@ -65,14 +65,60 @@ def draw_text_on_image(
     # 创建一个可绘制的图像副本
     img_copy = image.copy()
     draw = ImageDraw.Draw(img_copy)
-
-    # 加载字体
-    font = ImageFont.truetype(font_path, int(font_size))
-
+    font_path = os.path.join(config.CURRENT_DIR, font_path)
+    font = ImageFont.truetype(font_path, font_size)
     # 绘制文字
     draw.text(position, text, font=font, fill=fill_color)
 
     return img_copy
+
+
+def draw_multiline_text_on_image(
+    image,
+    text,
+    position,
+    font_path,
+    font_size,
+    line_spacing=10,
+    fill_color=(255, 255, 255, 255),
+):
+    """
+    在图像上绘制多行文字，根据空格自动换行
+
+    参数:
+        image: PIL.Image对象
+        text: 要绘制的文字
+        position: 第一行文字位置 (x, y)
+        font_path: 字体文件路径
+        font_size: 字体大小
+        line_spacing: 行间距
+        fill_color: 文字颜色，RGBA格式
+
+    返回:
+        添加了文字的图像和行数
+    """
+    # 创建一个可绘制的图像副本
+    img_copy = image.copy()
+    draw = ImageDraw.Draw(img_copy)
+    font_path = os.path.join(config.CURRENT_DIR, font_path)
+    font = ImageFont.truetype(font_path, font_size)
+
+    # 按空格分割文本
+    lines = text.split(" ")
+
+    # 如果只有一行，直接绘制并返回
+    if len(lines) <= 1:
+        draw.text(position, text, font=font, fill=fill_color)
+        return img_copy, 1
+
+    # 绘制多行文本
+    x, y = position
+    for i, line in enumerate(lines):
+        current_y = y + i * (font_size + line_spacing)
+        draw.text((x, current_y), line, font=font, fill=fill_color)
+
+    # 返回图像和行数
+    return img_copy, len(lines)
 
 
 def get_random_color(image_path):
@@ -735,20 +781,28 @@ def gen_poster_workflow(name):
                 library_eng_name = matched_template["library_eng_name"]
 
         # 添加中文名文字
-        fangzheng_font_path = os.path.join("font", "方正风雅宋简体.ttf")
+        fangzheng_font_path = os.path.join("font", "ch.ttf")
         result = draw_text_on_image(
             result, library_ch_name, (73.32, 427.34), fangzheng_font_path, 163
         )
 
         # 如果有英文名，才添加英文名文字
         if library_eng_name:
-            # 动态调整字体大小，根据英文名长度
+            # 动态调整字体大小，但统一使用一个字体大小
             base_font_size = 50  # 默认字体大小
+            line_spacing = 5  # 行间距
 
-            # 根据英文名长度调整字体大小
-            if len(library_eng_name) > 10:
+            # 计算行数和调整字体大小
+            word_count = len(library_eng_name.split())
+            max_chars_per_line = max([len(word) for word in library_eng_name.split()])
+
+            # 根据单词数量或最长单词长度调整字体大小
+            if max_chars_per_line > 10 or word_count > 3:
                 # 字体大小与文本长度成反比
-                font_size = base_font_size * (10 / len(library_eng_name)) ** 0.8
+                font_size = (
+                    base_font_size
+                    * (10 / max(max_chars_per_line, word_count * 3)) ** 0.8
+                )
                 # 设置最小字体大小限制，确保文字不会太小
                 font_size = max(font_size, 30)
             else:
@@ -756,21 +810,32 @@ def gen_poster_workflow(name):
 
             # 打印调试信息
             print(
-                f"英文名 '{library_eng_name}' 长度为 {len(library_eng_name)}，使用字体大小: {font_size:.2f}"
+                f"英文名 '{library_eng_name}' 单词数量: {word_count}, 最长单词长度: {max_chars_per_line}"
+            )
+            print(f"使用字体大小: {font_size:.2f}")
+
+            # 使用多行文本绘制
+            melete_font_path = os.path.join("font", "en.otf")
+            result, line_count = draw_multiline_text_on_image(
+                result,
+                library_eng_name,
+                (124.68, 624.55),
+                melete_font_path,
+                int(font_size),
+                line_spacing,
             )
 
-            melete_font_path = os.path.join("font", "Melete-UltraLight.otf")
-            result = draw_text_on_image(
-                result, library_eng_name, (124.68, 624.55), melete_font_path, font_size
-            )
+            # 根据行数调整色块高度
+            color_block_position = (84.38, 620.06)
+            # 基础高度为55，每增加一行增加(font_size + line_spacing)的高度
+            color_block_height = 55 + (line_count - 1) * (int(font_size) + line_spacing)
+            color_block_size = (21.51, color_block_height)
 
-            # 添加色块（只在有英文名时添加）
-            color_block_position = (84.38, 629.06)
-            color_block_size = (21.51, 55)
+            print(f"色块高度调整为: {color_block_height} (行数: {line_count})")
+
             result = draw_color_block(
                 result, color_block_position, color_block_size, random_color
             )
-
         # 保存结果
         result.save(output_path)
         print(f"成功: 图片已保存到 {output_path}")

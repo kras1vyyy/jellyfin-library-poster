@@ -5,6 +5,7 @@
     "password": "password",
     "update_poster": false
   },
+  "cron": "0 1 * * *",
   "exclude_Update_library": ["Short", "Playlists", "合集"],
   "template_mapping": [
     {
