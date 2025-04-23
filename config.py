@@ -26,20 +26,75 @@ except (FileNotFoundError, json.JSONDecodeError) as e:
 POSTER_FOLDER = os.path.join(CURRENT_DIR, "poster")  # 海报图片文件夹
 TEMPLATE_FOLDER = os.path.join(CURRENT_DIR, "template")  # 模板图片
 OUTPUT_FOLDER = os.path.join(CURRENT_DIR, "output")  # 输出文件夹
-
+if isinstance(JSON_CONFIG["jellyfin"], list):
+    JELLYFIN_CONFIGS = []  # 如果有多个配置，初始化为空列表
+    for json_config in JSON_CONFIG["jellyfin"]:
+        JELLYFIN_CONFIGS.append(
+            {
+                "SERVER_NAME": json_config.get("server_name", json_config["base_url"]),
+                "SERVER_TYPE": json_config.get("server_type", ""),
+                "BASE_URL": json_config["base_url"],  # 从JSON配置获取Jellyfin服务地址
+                "USER_NAME": json_config["user_name"],  # 用户名
+                "PASSWORD": json_config["password"],  # 密码
+                "AUTHORIZATION": 'MediaBrowser Client="other", Device="client", DeviceId="123", Version="0.0.0"',  # 是否需要认证
+                "ACCESS_TOKEN": "",  # API密钥
+                "USER_ID": "",  # 用户ID
+                "IMAGE_TYPE": "Primary",  # 图片类型
+                "IMAGE_PATH": "poster.png",  # 图片文件名
+                "UPDATE_POSTER": json_config.get(
+                    "update_poster", False
+                ),  # 是否更新海报
+            }
+        )
+else:
+    JELLYFIN_CONFIG = {
+        "SERVER_NAME": JSON_CONFIG["jellyfin"].get(
+            "server_name", JSON_CONFIG["jellyfin"]["base_url"]
+        ),
+        "SERVER_TYPE": JSON_CONFIG["jellyfin"].get("server_type", ""),
+        "BASE_URL": JSON_CONFIG["jellyfin"][
+            "base_url"
+        ],  # 从JSON配置获取Jellyfin服务地址
+        "USER_NAME": JSON_CONFIG["jellyfin"]["user_name"],  # 用户名
+        "PASSWORD": JSON_CONFIG["jellyfin"]["password"],  # 密码
+        "AUTHORIZATION": 'MediaBrowser Client="other", Device="client", DeviceId="123", Version="0.0.0"',  # 是否需要认证
+        "ACCESS_TOKEN": "",  # API密钥
+        "USER_ID": "",  # 用户ID
+        "IMAGE_TYPE": "Primary",  # 图片类型
+        "IMAGE_PATH": "poster.png",  # 图片文件名
+        "UPDATE_POSTER": JSON_CONFIG["jellyfin"].get(
+            "update_poster", False
+        ),  # 是否更新海报
+    }
+    JELLYFIN_CONFIGS = [JELLYFIN_CONFIG]
 # Jellyfin 配置
+# JELLYFIN_CONFIG = {
+#     "BASE_URL": JSON_CONFIG["jellyfin"]["base_url"],  # 从JSON配置获取Jellyfin服务地址
+#     "USER_NAME": JSON_CONFIG["jellyfin"]["user_name"],  # 用户名
+#     "PASSWORD": JSON_CONFIG["jellyfin"]["password"],  # 密码
+#     "AUTHORIZATION": 'MediaBrowser Client="other", Device="client", DeviceId="123", Version="0.0.0"',  # 是否需要认证
+#     "ACCESS_TOKEN": "",  # API密钥
+#     "USER_ID": "",  # 用户ID
+#     "IMAGE_TYPE": "Primary",  # 图片类型
+#     "IMAGE_PATH": "poster.png",  # 图片文件名
+#     "UPDATE_POSTER": JSON_CONFIG["jellyfin"].get(
+#         "update_poster", False
+#     ),  # 是否更新海报
+# }
 JELLYFIN_CONFIG = {
-    "BASE_URL": JSON_CONFIG["jellyfin"]["base_url"],  # 从JSON配置获取Jellyfin服务地址
-    "USER_NAME": JSON_CONFIG["jellyfin"]["user_name"],  # 用户名
-    "PASSWORD": JSON_CONFIG["jellyfin"]["password"],  # 密码
+    "SERVER_NAME": "",  # 服务器名称
+    "SERVER_TYPE": "",
+    "BASE_URL": "",  # 从JSON配置获取Jellyfin服务地址
+    "USER_NAME": "",  # 用户名
+    "PASSWORD": "",  # 密码
+    "SERVER_NAME": "",
+    "SERVER_TYPE": "",
     "AUTHORIZATION": 'MediaBrowser Client="other", Device="client", DeviceId="123", Version="0.0.0"',  # 是否需要认证
     "ACCESS_TOKEN": "",  # API密钥
     "USER_ID": "",  # 用户ID
     "IMAGE_TYPE": "Primary",  # 图片类型
     "IMAGE_PATH": "poster.png",  # 图片文件名
-    "UPDATE_POSTER": JSON_CONFIG["jellyfin"].get(
-        "update_poster", False
-    ),  # 是否更新海报
+    "UPDATE_POSTER": False,  # 是否更新海报
 }
 
 CRON = JSON_CONFIG.get("cron", "0 1 * * *")  # 默认每天1点执行一次
@@ -114,7 +169,7 @@ def refresh_auth():
 
 
 # 模块加载时尝试进行认证
-try:
-    init_auth()
-except Exception as e:
-    print(f"初始化认证时出错: {e}")
+# try:
+#     init_auth()
+# except Exception as e:
+#     print(f"初始化认证时出错: {e}")

@@ -29,50 +29,52 @@ from update_poster import upload_poster_workflow
 
 
 def process_libraries():
-    """
-    处理所有媒体库的核心逻辑
-    """
-    logger.info("=" * 50)
-    logger.info(f"开始执行 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info("=" * 50)
+    for jellyfin_config in config.JELLYFIN_CONFIGS:
+        config.JELLYFIN_CONFIG.update(jellyfin_config)
+        """
+        处理所有媒体库的核心逻辑
+        """
+        logger.info("=" * 50)
+        logger.info(f"开始执行 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info("=" * 50)
 
-    # 1. 获取媒体库列表
-    libraries = get_libraries()
-    if not libraries:
-        logger.info("未能获取媒体库列表，任务终止")
-        return
+        # 1. 获取媒体库列表
+        libraries = get_libraries()
+        if not libraries:
+            logger.info("未能获取媒体库列表，任务终止")
+            return
 
-    logger.info(f"成功获取到 {len(libraries)} 个媒体库:")
-    for i, library in enumerate(libraries, 1):
-        logger.info(f"  {i}. {library['Name']} (ID: {library['Id']})")
+        logger.info(f"成功获取到 {len(libraries)} 个媒体库:")
+        for i, library in enumerate(libraries, 1):
+            logger.info(f"  {i}. {library['Name']} (ID: {library['Id']})")
 
-    # 这里可以根据需要选择特定的媒体库
-    for library in libraries:
-        logger.info(f"找到媒体库: {library['Name']} (ID: {library['Id']})")
-        # 2. 下载海报
-        success = download_posters_workflow(library["Id"], library["Name"])
-        if not success:
-            logger.info(f"下载海报失败: {library['Name']} (ID: {library['Id']})")
-            continue
+        # 这里可以根据需要选择特定的媒体库
+        for library in libraries:
+            logger.info(f"找到媒体库: {library['Name']} (ID: {library['Id']})")
+            # 2. 下载海报
+            success = download_posters_workflow(library["Id"], library["Name"])
+            if not success:
+                logger.info(f"下载海报失败: {library['Name']} (ID: {library['Id']})")
+                continue
 
-        # 3. 生成九宫格海报
-        gen_poster_workflow(library["Name"])
+            # 3. 生成九宫格海报
+            gen_poster_workflow(library["Name"])
 
-        # 4. 上传海报到Jellyfin
-        if config.JELLYFIN_CONFIG["UPDATE_POSTER"]:  # 检查是否需要更新海报
-            if library["Name"] not in config.EXCLUDE_LIBRARY:
-                logger.info(f"[4/4] 上传[{library['Name']}]海报...")
-                logger.info("-" * 40)
-                upload_poster_workflow(library["Id"], library["Name"])
+            # 4. 上传海报到Jellyfin
+            if config.JELLYFIN_CONFIG["UPDATE_POSTER"]:  # 检查是否需要更新海报
+                if library["Name"] not in config.EXCLUDE_LIBRARY:
+                    logger.info(f"[4/4] 上传[{library['Name']}]海报...")
+                    logger.info("-" * 40)
+                    upload_poster_workflow(library["Id"], library["Name"])
+                else:
+                    logger.info(f"[4/4] 不更新[{library['Name']}]海报...")
+                    logger.info("-" * 40)
             else:
                 logger.info(f"[4/4] 不更新[{library['Name']}]海报...")
                 logger.info("-" * 40)
-        else:
-            logger.info(f"[4/4] 不更新[{library['Name']}]海报...")
-            logger.info("-" * 40)
 
-    logger.info("\n所有任务已完成")
-    logger.info("=" * 50)
+        logger.info("\n所有任务已完成")
+        logger.info("=" * 50)
 
 
 def main():
@@ -101,8 +103,8 @@ def main():
             logger.info("首次启动立即执行一次")
             process_libraries()
             # 重新计算下一次执行时间
-            next_run = cron.get_next(datetime)
-            logger.info(f"下次执行时间: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
+            # next_run = cron.get_next(datetime)
+            # logger.info(f"下次执行时间: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 进入定时循环
         logger.info("进入定时任务循环，按 Ctrl+C 退出")

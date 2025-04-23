@@ -1,10 +1,22 @@
 {
-  "jellyfin": {
-    "base_url": "http://192.168.2.211:8096",
-    "user_name": "username",
-    "password": "password",
-    "update_poster": false
-  },
+  "jellyfin": [
+    {
+      "server_name": "MyJellyfin",
+      "server_type": "jellyfin",
+      "base_url": "http://192.168.2.210:8096",
+      "user_name": "user_name",
+      "password": "password",
+      "update_poster": false
+    },
+    {
+      "server_name": "MyEmby",
+      "server_type": "emby",
+      "base_url": "http://192.168.2.211:8097",
+      "user_name": "user_name",
+      "password": "password",
+      "update_poster": false
+    }
+  ],
   "cron": "0 1 * * *",
   "exclude_update_library": ["Short", "Playlists", "合集"],
   "template_mapping": [
