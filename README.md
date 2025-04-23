@@ -201,7 +201,3 @@ python main.py
 ![](./screenshot/2.png)
 
 ![](./screenshot/1.png)
-
-```
-
-```
