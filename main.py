@@ -3,19 +3,9 @@ import sys
 import time
 from datetime import datetime, timedelta
 import json
-import logging
 
 # 强制标准输出不缓冲
 sys.stdout.reconfigure(line_buffering=True)
-
-# 配置日志立即刷新
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO,
-    handlers=[logging.StreamHandler(stream=sys.stdout)],
-)
-
-logger = logging.getLogger("jellyfin-library-poster")
 
 # 导入用于解析cron表达式的库
 from croniter import croniter
@@ -26,6 +16,7 @@ from gen_poster import gen_poster_workflow
 from get_library import get_libraries
 from get_poster import download_posters_workflow
 from update_poster import upload_poster_workflow
+from logger import app_logger as logger
 
 
 def process_libraries():
@@ -35,45 +26,68 @@ def process_libraries():
         处理所有媒体库的核心逻辑
         """
         logger.info("=" * 50)
-        logger.info(f"开始执行 - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+        logger.info(
+            f"开始执行服务器 [{jellyfin_config['SERVER_NAME']}] - {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        )
         logger.info("=" * 50)
 
         # 1. 获取媒体库列表
         libraries = get_libraries()
         if not libraries:
-            logger.info("未能获取媒体库列表，任务终止")
+            logger.warning(
+                f"[{jellyfin_config['SERVER_NAME']}] 未能获取媒体库列表，任务终止"
+            )
             return
 
-        logger.info(f"成功获取到 {len(libraries)} 个媒体库:")
+        logger.info(
+            f"[{jellyfin_config['SERVER_NAME']}] 成功获取到 {len(libraries)} 个媒体库:"
+        )
         for i, library in enumerate(libraries, 1):
             logger.info(f"  {i}. {library['Name']} (ID: {library['Id']})")
 
         # 这里可以根据需要选择特定的媒体库
         for library in libraries:
-            logger.info(f"找到媒体库: {library['Name']} (ID: {library['Id']})")
+            current_library = library["Name"]
+            logger.info(
+                f"[{jellyfin_config['SERVER_NAME']}] 开始处理媒体库: {current_library} (ID: {library['Id']})"
+            )
             # 2. 下载海报
-            success = download_posters_workflow(library["Id"], library["Name"])
+            success, count = download_posters_workflow(library["Id"], current_library)
             if not success:
-                logger.info(f"下载海报失败: {library['Name']} (ID: {library['Id']})")
+                logger.warning(
+                    f"[{jellyfin_config['SERVER_NAME']}][{current_library}] 下载海报失败"
+                )
                 continue
 
             # 3. 生成九宫格海报
-            gen_poster_workflow(library["Name"])
+            gen_poster_workflow(current_library)
 
             # 4. 上传海报到Jellyfin
             if config.JELLYFIN_CONFIG["UPDATE_POSTER"]:  # 检查是否需要更新海报
-                if library["Name"] not in config.EXCLUDE_LIBRARY:
-                    logger.info(f"[4/4] 上传[{library['Name']}]海报...")
+                if current_library not in config.EXCLUDE_LIBRARY:
+                    logger.info(
+                        f"[{jellyfin_config['SERVER_NAME']}][{current_library}] [4/4] 上传海报..."
+                    )
                     logger.info("-" * 40)
-                    upload_poster_workflow(library["Id"], library["Name"])
+                    upload_poster_workflow(library["Id"], current_library)
                 else:
-                    logger.info(f"[4/4] 不更新[{library['Name']}]海报...")
+                    logger.info(
+                        f"[{jellyfin_config['SERVER_NAME']}][{current_library}] [4/4] 不更新海报（在排除列表中）..."
+                    )
                     logger.info("-" * 40)
+                    logger.info(
+                        f"[{jellyfin_config['SERVER_NAME']}][{current_library}] 媒体库在排除列表中，已跳过上传海报"
+                    )
             else:
-                logger.info(f"[4/4] 不更新[{library['Name']}]海报...")
+                logger.info(
+                    f"[{jellyfin_config['SERVER_NAME']}][{current_library}] [4/4] 不更新海报（全局设置关闭）..."
+                )
                 logger.info("-" * 40)
+                logger.info(
+                    f"[{jellyfin_config['SERVER_NAME']}][{current_library}] 全局海报更新设置已关闭，已跳过上传海报"
+                )
 
-        logger.info("\n所有任务已完成")
+        logger.info(f"[{jellyfin_config['SERVER_NAME']}] 所有媒体库任务已完成")
         logger.info("=" * 50)
 
 
@@ -102,9 +116,6 @@ def main():
         if run_immediately:
             logger.info("首次启动立即执行一次")
             process_libraries()
-            # 重新计算下一次执行时间
-            # next_run = cron.get_next(datetime)
-            # logger.info(f"下次执行时间: {next_run.strftime('%Y-%m-%d %H:%M:%S')}")
 
         # 进入定时循环
         logger.info("进入定时任务循环，按 Ctrl+C 退出")
@@ -119,7 +130,7 @@ def main():
             if wait_seconds > 0:
                 # 不需要一直等待到下一次执行，每分钟检查一次
                 if wait_seconds > 60:
-                    logger.info(
+                    logger.debug(
                         f"等待执行，下次运行时间: {next_run.strftime('%Y-%m-%d %H:%M:%S')}"
                     )
                     time.sleep(min(60, wait_seconds))
@@ -145,7 +156,7 @@ def main():
                 )
 
     except Exception as e:
-        logger.info(f"Cron表达式无效或执行错误: {e}")
+        logger.error(f"Cron表达式无效或执行错误: {e}", exc_info=True)
         logger.info("立即执行一次")
         process_libraries()
 
@@ -154,6 +165,6 @@ if __name__ == "__main__":
     try:
         main()
     except KeyboardInterrupt:
-        logger.info("\n程序已手动停止")
+        logger.info("程序已手动停止")
     except Exception as e:
-        logger.info(f"程序运行出错: {e}")
+        logger.error(f"程序运行出错: {e}", exc_info=True)

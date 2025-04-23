@@ -1,5 +1,9 @@
 import os
 import json
+from logger import get_module_logger
+
+# 获取模块日志记录器
+logger = get_module_logger("config")
 
 # 获取当前脚本所在目录
 CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -9,18 +13,37 @@ CONFIG_JSON_PATH = os.path.join(CURRENT_DIR, "config", "config.json")
 try:
     with open(CONFIG_JSON_PATH, "r", encoding="utf-8") as f:
         JSON_CONFIG = json.load(f)
+    logger.info(f"成功加载配置文件: {CONFIG_JSON_PATH}")
 except (FileNotFoundError, json.JSONDecodeError) as e:
-    print(f"无法加载配置文件 config.json: {e}")
+    logger.error(f"无法加载配置文件 config.json: {e}")
+    logger.warning("使用默认配置")
     JSON_CONFIG = {
-        "jellyfin": {
-            "base_url": "http://192.168.2.211:8096",
-            "user_name": "your_username",
-            "password": "your_password",
-        },
+        "jellyfin": [
+            {
+                "server_name": "MyJellyfin",
+                "server_type": "jellyfin",
+                "base_url": "http://192.168.2.210:8096",
+                "user_name": "user_name",
+                "password": "password",
+                "update_poster": False,
+            }
+        ],
         "cron": "0 1 * * *",
         "exclude_update_library": ["Short", "Playlists", "合集"],
-        "template_mapping": [{"template_name": "Anime", "library_name": "Anime"}],
+        "template_mapping": [
+            {
+                "library_name": "Anime",
+                "library_ch_name": "动漫",
+                "library_eng_name": "ANIME",
+            },
+            {
+                "library_name": "Classic TV",
+                "library_ch_name": "电视剧",
+                "library_eng_name": "TV",
+            },
+        ],
     }
+
 
 # 文件路径配置
 POSTER_FOLDER = os.path.join(CURRENT_DIR, "poster")  # 海报图片文件夹
@@ -131,6 +154,7 @@ def init_auth():
     from auth import authenticate
 
     # 进行认证
+    logger.info(f"正在初始化服务器 {JELLYFIN_CONFIG['SERVER_NAME']} 的认证信息")
     auth_info = authenticate(
         JELLYFIN_CONFIG["BASE_URL"],
         JELLYFIN_CONFIG["USER_NAME"],
@@ -141,9 +165,10 @@ def init_auth():
         # 更新JELLYFIN_CONFIG
         JELLYFIN_CONFIG["ACCESS_TOKEN"] = auth_info.get("access_token", "")
         JELLYFIN_CONFIG["USER_ID"] = auth_info.get("user_id", "")
+        logger.info(f"认证信息已更新: 用户ID={JELLYFIN_CONFIG['USER_ID'][:8]}...")
         return True
     else:
-        print("认证失败，无法获取认证信息")
+        logger.error("认证失败，无法获取认证信息")
         return False
 
 
@@ -152,6 +177,7 @@ def get_auth_info():
     """获取认证信息，如果尚未认证则进行认证"""
     # 如果尚未进行认证，先初始化认证
     if not JELLYFIN_CONFIG["ACCESS_TOKEN"] or not JELLYFIN_CONFIG["USER_ID"]:
+        logger.debug("未找到有效的令牌，重新进行认证")
         init_auth()
 
     # 返回认证相关信息
@@ -165,11 +191,12 @@ def get_auth_info():
 # 刷新认证信息
 def refresh_auth():
     """强制刷新认证信息"""
+    logger.info("强制刷新认证信息")
     return init_auth()
 
 
-# 模块加载时尝试进行认证
+# 模块加载时不自动进行认证，改为按需认证
 # try:
 #     init_auth()
 # except Exception as e:
-#     print(f"初始化认证时出错: {e}")
+#     logger.error(f"初始化认证时出错: {e}", exc_info=True)

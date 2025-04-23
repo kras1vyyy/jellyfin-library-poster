@@ -1,6 +1,10 @@
 import requests
 import json
 import os
+from logger import get_module_logger
+
+# 获取模块日志记录器
+logger = get_module_logger("auth")
 
 
 def authenticate(base_url, username, password):
@@ -21,6 +25,7 @@ def authenticate(base_url, username, password):
     }
 
     try:
+        logger.info(f"正在连接服务器: {base_url}")
         response = requests.request("POST", url, headers=headers, data=payload)
         response.raise_for_status()  # 检查HTTP错误
 
@@ -33,14 +38,15 @@ def authenticate(base_url, username, password):
 
         # 验证是否成功获取了必要信息
         if auth_info["user_id"] and auth_info["access_token"]:
+            logger.info(f"认证成功: 用户 {username}")
             return auth_info
         else:
-            print("认证成功但未能获取User.Id或AccessToken")
+            logger.error("认证成功但未能获取User.Id或AccessToken")
             return None
 
     except requests.exceptions.RequestException as e:
-        print(f"认证请求失败: {str(e)}")
+        logger.error(f"认证请求失败: {str(e)}")
         return None
     except json.JSONDecodeError:
-        print("无法解析服务器响应")
+        logger.error("无法解析服务器响应")
         return None

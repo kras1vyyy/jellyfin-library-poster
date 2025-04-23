@@ -5,6 +5,10 @@ import base64
 from urllib.parse import urljoin
 import config
 from PIL import Image, ImageFilter, ImageEnhance
+from logger import get_module_logger
+
+# 获取模块日志记录器
+logger = get_module_logger("update_poster")
 
 
 def load_config():
@@ -20,10 +24,11 @@ def read_image_file(path):
             image_data_base64 = base64.b64encode(image_data).decode("utf-8")
             return image_data_base64
     except Exception as e:
+        logger.error(f"错误: 读取图片文件时出错: {e}")
         raise IOError(f"错误: 读取图片文件时出错: {e}")
 
 
-def upload_image(item_id, image_data):
+def upload_image(item_id, image_data, library_name):
     """上传图片到Jellyfin服务器"""
     try:
         # 构造 URL 和请求头
@@ -35,17 +40,27 @@ def upload_image(item_id, image_data):
         response = requests.post(url, headers=headers, data=image_data, timeout=30)
 
         if response.status_code in (200, 204):
-            print("成功: 图片上传成功")
+            logger.info(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{library_name}] 成功: 图片上传成功"
+            )
             return True
         else:
-            print(f"错误: 图片上传失败，状态码: {response.status_code}")
+            logger.error(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{library_name}] 错误: 图片上传失败，状态码: {response.status_code}"
+            )
             try:
-                print(f"错误详情: {response.json()}")
+                logger.error(
+                    f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{library_name}] 错误详情: {response.json()}"
+                )
             except ValueError:
-                print(f"错误详情: {response.text[:500]}")
+                logger.error(
+                    f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{library_name}] 错误详情: {response.text[:500]}"
+                )
             return False
     except requests.exceptions.RequestException as e:
-        print(f"错误: 请求过程中出错: {e}")
+        logger.error(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{library_name}] 错误: 请求过程中出错: {e}"
+        )
         return False
 
 
@@ -97,23 +112,32 @@ def upload_poster_workflow(item_id, name):
         bool: 上传是否成功
     """
     try:
-        print("\n[4/4] 正在更新Jellyfin海报...")
-        print("-" * 40)
+        logger.info(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] [4/4] 正在更新Jellyfin海报..."
+        )
+        logger.info("-" * 40)
 
         file_path = os.path.join(config.OUTPUT_FOLDER, f"{name}.png")
         # 读取图片文件
         image_data_base64 = read_image_file(file_path)
 
         # 上传图片
-        success = upload_image(item_id, image_data_base64)
+        success = upload_image(item_id, image_data_base64, name)
 
         if success:
-            print("\n海报上传成功！")
+            logger.info(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 海报上传成功！"
+            )
             return True
         else:
-            print("\n海报上传失败！")
+            logger.warning(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 海报上传失败！"
+            )
             return False
 
     except Exception as e:
-        print(f"\n[错误] 上传海报时出错: {e}")
+        logger.error(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 上传海报时出错: {e}",
+            exc_info=True,
+        )
         return False

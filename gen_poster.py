@@ -3,6 +3,10 @@ import os
 import math
 import config
 import random  # 添加随机模块
+from logger import get_module_logger
+
+# 获取模块日志记录器
+logger = get_module_logger("gen_poster")
 
 
 def add_shadow(img, offset=(5, 5), shadow_color=(0, 0, 0, 100), blur_radius=3):
@@ -153,7 +157,7 @@ def get_random_color(image_path):
             r, g, b, a = img.getpixel((random_x, random_y))
             return (r, g, b, a)
     except Exception as e:
-        print(f"获取图片颜色时出错: {e}")
+        logger.error(f"获取图片颜色时出错: {e}")
         # 返回随机颜色作为备选
         return (
             random.randint(50, 200),
@@ -544,8 +548,10 @@ def gen_poster_workflow(name):
     """
 
     try:
-        print("\n[3/4] 正在生成海报...")
-        print("-" * 40)
+        logger.info(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] [3/4] 正在生成海报..."
+        )
+        logger.info("-" * 40)
         poster_folder = os.path.join(config.POSTER_FOLDER, name)
         output_path = os.path.join(config.OUTPUT_FOLDER, f"{name}.png")
         rows = config.POSTER_GEN_CONFIG["ROWS"]
@@ -591,14 +597,17 @@ def gen_poster_workflow(name):
                 for f in os.listdir(poster_folder)
                 if os.path.isfile(os.path.join(poster_folder, f))
                 and f.lower().endswith(supported_formats)
-                and os.path.splitext(f)[0] in order_map  # 文件名（不含扩展名）必须在自定义顺序里
+                and os.path.splitext(f)[0]
+                in order_map  # 文件名（不含扩展名）必须在自定义顺序里
             ],
-            key=lambda x: order_map[os.path.splitext(os.path.basename(x))[0]]
+            key=lambda x: order_map[os.path.splitext(os.path.basename(x))[0]],
         )
 
         # 确保至少有一张图片
         if not poster_files:
-            print(f"错误: 在 {poster_folder} 中没有找到支持的图片文件")
+            logger.error(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 错误: 在 {poster_folder} 中没有找到支持的图片文件"
+            )
             return False
 
         # 限制最多处理 rows*cols 张图片
@@ -682,11 +691,6 @@ def gen_poster_workflow(name):
                         blur_radius=20,  # 保持模糊半径
                     )
 
-                    # 在添加阴影后保存一张测试图片来检查阴影效果
-                    # debug_path = os.path.join(output_dir, "shadow_test.png")
-                    # resized_poster_with_shadow.save(debug_path)
-                    # print(f"已保存阴影测试图片到: {debug_path}")
-
                     # 计算在列画布上的位置（垂直排列）
                     y_position = row_index * (cell_height + margin)
                     x_position = 0  # 一般为0，但在有阴影时可能需要调整
@@ -699,7 +703,9 @@ def gen_poster_workflow(name):
                     )
 
                 except Exception as e:
-                    print(f"错误: 处理图片 {os.path.basename(poster_path)} 时出错: {e}")
+                    logger.error(
+                        f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 处理图片 {os.path.basename(poster_path)} 时出错: {e}"
+                    )
                     continue
 
             # 保存原始列图像（旋转前）
@@ -708,6 +714,9 @@ def gen_poster_workflow(name):
                     columns_dir, f"{name}_column_{col_index+1}_original.png"
                 )
                 column_image.save(column_orig_path)
+                logger.debug(
+                    f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 已保存原始列图像到: {column_orig_path}"
+                )
 
             # 现在我们有了完整的一列图片，准备旋转它
             # 创建一个足够大的画布来容纳旋转后的列
@@ -738,6 +747,9 @@ def gen_poster_workflow(name):
                     columns_dir, f"column_{col_index+1}_rotated.png"
                 )
                 rotated_column.save(column_rotated_path)
+                logger.debug(
+                    f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 已保存旋转后的列图像到: {column_rotated_path}"
+                )
 
             # 计算列在模板上的位置（不同的列有不同的y起点）
             column_center_y = start_y + column_height // 2
@@ -817,10 +829,12 @@ def gen_poster_workflow(name):
                 font_size = base_font_size
 
             # 打印调试信息
-            print(
-                f"英文名 '{library_eng_name}' 单词数量: {word_count}, 最长单词长度: {max_chars_per_line}"
+            logger.debug(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 英文名 '{library_eng_name}' 单词数量: {word_count}, 最长单词长度: {max_chars_per_line}"
             )
-            print(f"使用字体大小: {font_size:.2f}")
+            logger.debug(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 使用字体大小: {font_size:.2f}"
+            )
 
             # 使用多行文本绘制
             melete_font_path = os.path.join("font", "en.otf")
@@ -839,18 +853,25 @@ def gen_poster_workflow(name):
             color_block_height = 55 + (line_count - 1) * (int(font_size) + line_spacing)
             color_block_size = (21.51, color_block_height)
 
-            print(f"色块高度调整为: {color_block_height} (行数: {line_count})")
+            logger.debug(
+                f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 色块高度调整为: {color_block_height} (行数: {line_count})"
+            )
 
             result = draw_color_block(
                 result, color_block_position, color_block_size, random_color
             )
         # 保存结果
         result.save(output_path)
-        print(f"成功: 图片已保存到 {output_path}")
+        logger.info(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 成功: 图片已保存到 {output_path}"
+        )
         return True
 
     except Exception as e:
-        print(f"错误: 创建九宫格图片时出错: {e}")
+        logger.error(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}][{name}] 创建九宫格图片时出错: {e}",
+            exc_info=True,
+        )
         return False
 
 

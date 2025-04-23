@@ -3,8 +3,6 @@
 jellyfin/Emby 根据媒体库里面的海报(默认最新的 9 张,没有时间就随机)生成媒体库封面并且上传更新
 不会 python 随便写的
 
-理论上支持 Emby(已得到别人验证可以)
-
 ## 使用说明
 
 ### docker 运行
@@ -15,14 +13,17 @@ docker run \
   -v "./config:/app/config" \
   -v "./poster:/app/poster" \
   -v "./output:/app/output" \
+  -v "./output:/app/logs" \
   evanqu/jellyfin-library-poster:latest
 ```
 
 `/app/config` 存放 config.json
 
-`/app/poster` 存放下载得海报
+`/app/poster` 存放下载得海报(可选)
 
-`/app/output` 存放生成的媒体库封面
+`/app/output` 存放生成的媒体库封面(可选)
+
+`/app/logs` 存放日志(可选)
 
 ### docker-compose 运行
 
@@ -37,6 +38,7 @@ services:
       - ./config:/app/config
       - ./poster:/app/poster
       - ./output:/app/output
+      - ./logs:/app/logs
 ```
 
 ```
@@ -59,14 +61,27 @@ python main.py
 ### 1. Jellyfin/Emby 服务器配置
 
 ```json
-"jellyfin": {
-  "base_url": "http://your-jellyfin/emby-server:port",  // Jellyfin/Emby 服务器地址
-  "user_name": "your-username",                    // 登录用户名
-  "password": "your-password",                     // 登录密码
-  "update_poster": false                            // 是否自动更新海报
-}
+"jellyfin": [
+    {
+      "server_name": "MyJellyfin",
+      "server_type": "jellyfin",
+      "base_url": "http://192.168.2.210:8096",
+      "user_name": "user_name",
+      "password": "password",
+      "update_poster": false
+    },
+    {
+      "server_name": "MyEmby",
+      "server_type": "emby",
+      "base_url": "http://192.168.2.211:8097",
+      "user_name": "user_name",
+      "password": "password",
+      "update_poster": false
+    }
+  ],
 ```
 
+- 支持多服务器配置
 - "jellyfin"的节点不要改,就算你是`emby`的也是`jellyfin`
 
 ### 2. 排除更新的媒体库
@@ -114,12 +129,16 @@ python main.py
 
 ```json
 {
-  "jellyfin": {
-    "base_url": "http://192.168.2.211:8096",
-    "user_name": "username",
-    "password": "password",
-    "update_poster": false
-  },
+  "jellyfin": [
+    {
+      "server_name": "MyJellyfin",
+      "server_type": "jellyfin",
+      "base_url": "http://192.168.2.210:8096",
+      "user_name": "user_name",
+      "password": "password",
+      "update_poster": false
+    }
+  ],
   "cron": "0 1 * * *",
   "exclude_update_library": ["Short", "Playlists", "合集"],
   "template_mapping": [

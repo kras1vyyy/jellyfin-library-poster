@@ -2,6 +2,10 @@ import requests
 import json
 
 import config
+from logger import get_module_logger
+
+# 获取模块日志记录器
+logger = get_module_logger("get_library")
 
 
 def get_libraries():
@@ -13,8 +17,8 @@ def get_libraries():
     """
     # 确保已经完成认证
     config.get_auth_info()
-    print("\n[1/4] 获取媒体库列表...")
-    print("-" * 40)
+    logger.info(f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}] [1/4] 获取媒体库列表...")
+    logger.info("-" * 40)
     url = f"{config.JELLYFIN_CONFIG['BASE_URL']}/Library/MediaFolders"
 
     headers = {
@@ -36,8 +40,12 @@ def get_libraries():
 
         return libraries
     except requests.exceptions.RequestException as e:
-        print(f"获取媒体库列表失败: {str(e)}")
+        logger.error(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}] 获取媒体库列表失败: {str(e)}"
+        )
         return []
     except (json.JSONDecodeError, KeyError) as e:
-        print(f"解析媒体库列表数据失败: {str(e)}")
+        logger.error(
+            f"[{config.JELLYFIN_CONFIG['SERVER_NAME']}] 解析媒体库列表数据失败: {str(e)}"
+        )
         return []
